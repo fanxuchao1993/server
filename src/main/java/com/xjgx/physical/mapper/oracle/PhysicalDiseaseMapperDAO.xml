@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalDiseaseMapperDAO">
+
+	<select id="queryListTop10" resultMap="diseaseMapperOne">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE, T.DISEASE_NAME, SUM(T.DISEASE_NUMS) SUM
+			          FROM PH_PHYSICAL_DISEASE T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	
+	<select id="queryDiseaseList" resultMap="diseaseMapperOne">
+		<![CDATA[
+			SELECT T.ORG_ID, T.ORG_NAME, SUM(T.DISEASE_NUMS) SUM
+			  FROM PH_PHYSICAL_DISEASE T
+			 WHERE T.DISEASE_CODE = #{diseaseCode}
+			   AND T.P_ORG_ID = #{orgId}
+			   AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			   AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.ORG_ID, T.ORG_NAME
+		 ]]>
+	</select>
+	
+	<select id="queryDiseaseListFan" resultMap="diseaseMapper">
+		SELECT A.*, ROWNUM RN
+          FROM (SELECT DISEASE_CODE diseaseCode,
+                       DISEASE_NAME diseaseName,
+                       SUM(DISEASE_NUMS) sum
+                  FROM PH_PHYSICAL_DISEASE
+                  WHERE 1=1 
+                   <if test="pOrgId !=null and pOrgId !=''">
+				        AND P_ORG_ID = #{pOrgId}
+			       </if>
+                   <if test="orgName !=null and orgName !=''">
+				        AND ORG_NAME= #{orgName}
+			       </if>
+                        AND TO_CHAR(DETECTION_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+                        TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+                        TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')
+                 GROUP BY DISEASE_CODE, DISEASE_NAME
+                 ORDER BY sum desc) A
+         WHERE ROWNUM <![CDATA[ <= ]]> 10     
+	</select>
+	<select id="queryOrgByDiseaseList" resultMap="diseaseMapper">
+	<![CDATA[
+			SELECT DISTINCT ORG_ID,ORG_NAME
+			  FROM PH_PHYSICAL_DISEASE T
+               WHERE T.P_ORG_ID = #{orgId}
+			    AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			    AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+		 ]]>
+	</select>
+	
+	<select id="queryListTop10ByOrg" resultMap="diseaseMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE diseaseCode, T.DISEASE_NAME diseaseName, SUM(T.DISEASE_NUMS) sum
+			          FROM PH_PHYSICAL_DISEASE T
+			         WHERE T.ORG_ID = #{orgId}
+			           AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY sum DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	
+	<select id="queryDiseasesumByOrg" resultMap="diseaseMapper">
+	    <![CDATA[
+	    SELECT ORG_ID orgId, ORG_NAME orgName, DISEASE_NAME diseaseName, SUM(DISEASE_NUMS)sum
+        FROM PH_PHYSICAL_DISEASE
+        WHERE P_ORG_ID = #{orgId}
+          AND DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          AND DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        GROUP BY ORG_ID, ORG_NAME, DISEASE_NAME
+        ORDER BY ORG_ID
+        ]]>
+	</select>
+
+	<select id="queryDiseaseBySexList" resultMap="diseaseMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE, T.DISEASE_NAME, SUM(${column}) SUM
+			          FROM PH_PHYSICAL_DISEASE T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	
+    <select id="queryDiseaseBySexTables" parameterType="hashmap" resultMap="diseaseMapper">
+		<![CDATA[
+			SELECT T.DISEASE_CODE,
+			       T.DISEASE_NAME,
+			       SUM(T.MALE_NUMS) maleNums,
+			       SUM(T.FEMALE_NUMS) femaleNums,
+			       (SUM(T.MALE_NUMS)+SUM(T.FEMALE_NUMS)) sum
+			  FROM PH_PHYSICAL_DISEASE T
+			  WHERE T.P_ORG_ID = #{orgId}
+		            AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+		            AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			 ORDER BY sum DESC
+		]]>	 
+	</select>
+	
+	<resultMap type="com.xjgx.physical.dto.AbnormalZbDTO" id="diseaseMapperOne">
+		<id column="org_id" property="orgId"/>
+		<id column="org_name" property="orgName"/>
+		<id column="item_code" property="itemCode"/>
+		<id column="item_name" property="itemName"/>
+		<id column="disease_code" property="diseaseCode"/>
+		<id column="disease_name" property="diseaseName"/>
+		<id column="sum" property="sum"/>
+	</resultMap>
+	<resultMap type="com.xjgx.domain.PhysicalDisease" id="diseaseMapper">
+		<id column="id" property="id"/>
+		<id column="org_id" property="orgId"/>
+		<id column="p_org_id" property="pOrgId"/>
+		<id column="org_name" property="orgName"/>
+		<id column="districts" property="districts"/>
+		<id column="disease_code" property="diseaseCode"/>
+		<id column="disease_name" property="diseaseName"/>
+		<id column="disease_nums" property="diseaseNums"/>
+		<id column="male_nums" property="maleNums"/>
+		<id column="female_nums" property="femaleNums"/>
+		<id column="sum" property="sum"/>
+		<id column="detection_date" property="detectionDate"/>
+	</resultMap>
+</mapper>

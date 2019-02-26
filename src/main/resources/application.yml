@@ -1,0 +1,77 @@
+# 私有配置，对应于com.xjgx.config.Config类
+# 当前目录下spplication-test.yml文件为测试环境配置相关配置，方便自动化部署时使用
+config:
+  name: pm-server-physical
+  mode: dev
+  version: 1.0.0
+  upload-path: F:/TEST/
+spring:
+  jackson:
+    time-zone: GMT+8
+  # spring数据源配置
+  datasource:
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    url: jdbc:oracle:thin:@10.100.102.113:1521/orcl
+    username: ph
+    password: ph
+    type: com.alibaba.druid.pool.DruidDataSource
+    initialSize: 5  
+    minIdle: 5  
+    maxActive: 20  
+    maxWait: 60000  
+    timeBetweenEvictionRunsMillis: 60000  
+    minEvictableIdleTimeMillis: 300000  
+    validationQuery: select 1  
+    testWhileIdle: true  
+    testOnBorrow: false  
+    testOnReturn: false  
+    poolPreparedStatements: true  
+    maxPoolPreparedStatementPerConnectionSize: 20  
+    filters: stat,log4j  
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000  
+  # jpa相关配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: true
+  # 静态资源配置
+  resources:
+    static-locations:
+    - classpath:/resources/
+    - classpath:/static/
+    - classpath:/logs/
+    - file:${config.upload-path}
+  mvc:
+    static-path-pattern: /**
+# 当前服务端口配置、编码配置
+server:
+  port: 6990
+  tomcat: 
+    uri-encoding: utf-8
+# mybatis相关配置，从上到下依次为 mybatis当前配置文件、mybatis通配符扫描包、mybatis通配符xml查询相关配置文件
+mybatis:
+  config-location: classpath:/MyBatis-conf.xml
+  type-aliases-package: com.xjgx.domain
+  mapper-locations:
+  - classpath:/com/xjgx/**/mapper/oracle/*.xml
+---
+#后续springcloud相关的配置，目前暂时可以不看
+spring:
+  application:
+    name: pm-server-physical
+---
+eureka:
+  server:
+    address: localhost
+    port: 10000
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.server.address}:${eureka.server.port}/eureka/ 
+    enabled: false
+  instance:
+    preferIpAddress: true
+    instanceId: ${spring.cloud.client.ipAddress}:${server.port}
+    leaseRenewalIntervalInSeconds: 30
+    leaseExpirationDurationInSeconds: 90
+    

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalWorkSurveyMapperDAO">
+   <select id="queryCountOne"  parameterType="com.xjgx.physical.dto.PhysicalWorkSurveyDTO" resultType="com.xjgx.physical.dto.PhysicalWorkSurveyDTO" >
+     <![CDATA[
+           SELECT   
+		   Y.DISTRICTS DISTRICTS,
+           Y.ORG_ID ORGID,
+           Y.ORG_NAME ORGNAME，
+           Y.SUM SJ, --体检完成人数
+           X.SUMNUMS YJ, --应体检人数
+           ROUND(Y.SUM/ X.SUMNUMS * 100, 2) || '%' percent --完成率
+        FROM (SELECT X.ORG_ID,
+                     X.ORG_NAME,
+                     X.DISTRICTS,
+                     X.P_ORG_ID,
+                     （SUM(X.MATERNAL)+
+                     SUM(X.CHILDREN_MONTH)+
+                     SUM(X.CHILDREN_YEAR)+
+                     SUM(X.ENTERPRISE_WORKER)+
+                     SUM(X.HOBO)+
+                     SUM(X.OLD_MAN)+
+                     SUM(X.RESIDENT_HIGH)+
+                     SUM(X.RESIDENT_MIDDLE)+
+                     SUM(X.RETIRE_WORKER)+
+                     SUM(X.STUDENT)) SUM
+                FROM PH_PHYSICAL_COMPLETE X
+                WHERE X.COMPLETE_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND X.COMPLETE_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			           AND X.P_ORG_ID = #{orgId}
+               GROUP BY X.ORG_ID, X.ORG_NAME, X.DISTRICTS, X.P_ORG_ID) Y,
+               (SELECT
+                     ORG_ID,
+                     ORG_NAME,
+                     DISTRICTS,
+                     P_ORG_ID,
+                     MATERNAL+
+                     CHILDREN_MONTH+
+                     CHILDREN_YEAR+
+                     ENTERPRISE_WORKER+
+                     HOBO+
+                     OLD_MAN+
+                     RESIDENT_HIGH+
+                     RESIDENT_MIDDLE+
+                     RETIRE_WORKER+
+                     STUDENT SUMNUMS  from PH_PHYSICAL_NUMS  WHERE CYEAR = #{cyear}    ) X
+       WHERE Y.ORG_ID = X.ORG_ID 
+        ]]>
+	</select>
+   <select id="queryOrgOne"  parameterType="com.xjgx.physical.dto.PhysicalCountDTO" resultType="com.xjgx.physical.dto.PhysicalCountDTO" >
+     <![CDATA[
+     SELECT  C.* ,
+     CASE WHEN C.realCheckNumber != 0 THEN RTRIM(TO_CHAR(ROUND(C.positiveNumber / C.realCheckNumber * 100, 2), 'fm990.99'), '.') || '%' ELSE ''  END positiveRate,
+     CASE WHEN C.checkNumber != 0 THEN RTRIM(TO_CHAR(ROUND(C.realCheckNumber / C.checkNumber * 100, 2), 'fm990.99'), '.') || '%'  ELSE ''  END realCheckRate
+     FROM(
+       SELECT B.NAME orgName,
+       (SELECT SUM(C.MATERNAL) + SUM(C.CHILDREN_MONTH) +
+               SUM(C.CHILDREN_YEAR) + SUM(C.ENTERPRISE_WORKER) + SUM(C.HOBO) +
+               SUM(C.OLD_MAN) + SUM(C.RESIDENT_HIGH) +
+               SUM(C.RESIDENT_MIDDLE) + SUM(C.RETIRE_WORKER) +
+               SUM(C.STUDENT)
+          FROM PH_PHYSICAL_NUMS C
+         WHERE C.ORG_ID = B.ID
+               AND C.CYEAR = TO_CHAR(SYSDATE, 'YYYY')) checkNumber,
+       (SELECT SUM(D.MATERNAL) + SUM(D.CHILDREN_MONTH) +
+               SUM(D.CHILDREN_YEAR) + SUM(D.ENTERPRISE_WORKER) + SUM(D.HOBO) +
+               SUM(D.OLD_MAN) + SUM(D.RESIDENT_HIGH) +
+               SUM(D.RESIDENT_MIDDLE) + SUM(D.RETIRE_WORKER) +
+               SUM(D.STUDENT)
+          FROM PH_PHYSICAL_COMPLETE D
+         WHERE D.ORG_ID = B.ID AND
+         D.COMPLETE_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+         AND D.COMPLETE_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')) realCheckNumber,
+       (SELECT SUM(E.POSITIVE_NUMS)
+          FROM PH_PHYSICAL_COMPLETE E
+         WHERE E.ORG_ID = B.ID AND
+         E.COMPLETE_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+         AND E.COMPLETE_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')) positiveNumber
+     FROM (SELECT DISTINCT A.ORG_ID ID, A.ORG_NAME NAME
+           FROM PH_PHYSICAL_NUMS A
+           WHERE A.P_ORG_ID = #{pOrgId}
+           AND  A.CYEAR = TO_CHAR(SYSDATE, 'YYYY')) B
+     )C
+        ]]>
+	</select>
+	
+	<select id="queryOrgTwo"  parameterType="com.xjgx.physical.dto.PhysicalWorkSurveyDTO" resultType="com.xjgx.physical.dto.PhysicalWorkSurveyDTO" >
+     <![CDATA[ 
+         SELECT SUM(Y.DISEASE_CODE) DISEASESUM,
+          Y.ORG_NAME ORGNAME, 
+          Y.DISEASE_NAME DISEASENAME
+          FROM PH_PHYSICAL_DISEASE Y,
+               (SELECT B.DISEASE_CODE ,B.DISEASE_NAME from (SELECT distinct SUM(A.DISEASE_NUMS) CC, A.DISEASE_CODE,A.DISEASE_NAME
+                  FROM PH_PHYSICAL_DISEASE A
+                 GROUP BY A.DISEASE_CODE, A.DISEASE_NAME
+                 ORDER BY CC DESC ) B where rownum <=10) X
+         WHERE Y.DISEASE_CODE = X.DISEASE_CODE 
+         GROUP BY Y.ORG_NAME, Y.DISEASE_NAME
+         ORDER BY DISEASESUM DESC
+        ]]>
+	</select>
+	
+	<select id="queryOrgList"  parameterType="com.xjgx.domain.PhysicalDisease" resultType="com.xjgx.domain.PhysicalDisease" >
+     <![CDATA[ 
+         SELECT  DISTINCT ORG_ID orgId,ORG_NAME orgName
+          FROM   PH_PHYSICAL_DISEASE
+          WHERE  P_ORG_ID = #{pOrgId}
+          AND    DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          AND    DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        ]]>
+	</select>
+	
+	<select id="queryDiseaseByPorg"   resultType="com.xjgx.domain.PhysicalDisease" >
+     <![CDATA[ 
+         SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE diseaseCode, T.DISEASE_NAME diseaseName, SUM(T.DISEASE_NUMS) sum
+			          FROM PH_PHYSICAL_DISEASE T
+			         WHERE T.P_ORG_ID = #{pOrgId}
+			           AND T.DETECTION_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.DETECTION_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY sum DESC) T
+			 WHERE ROWNUM <= 10
+        ]]>
+	</select>
+	
+	<select id="queryDiseaseByOrg" resultType="com.xjgx.physical.dto.MyEntityDTO" >
+	SELECT   ORG_NAME orgName, 
+	<foreach collection="diseaseCodes" item="ID" index="index" separator="," >    
+                nvl("${ID.diseaseCode}" , 0) M${index}   
+     </foreach>
+        FROM (SELECT *
+          FROM (SELECT T.ORG_NAME,
+                       T.DISEASE_Code diseaseCode,
+                       SUM(DISEASE_NUMS) SUM
+                  FROM PH_PHYSICAL_DISEASE T
+                  WHERE T.DETECTION_DATE  <![CDATA[ >= ]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.DETECTION_DATE <![CDATA[ <= ]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                       AND T.P_ORG_ID = #{pOrgId}
+                 GROUP BY T.ORG_NAME, T.DISEASE_CODE) PIVOT(SUM(SUM) FOR diseaseCode IN (
+                 
+                 <foreach collection="diseaseCodes" item="ID" index="index" separator="," >    
+                ${ID.diseaseCode}   
+                </foreach>
+                  )))
+	</select>            
+</mapper>

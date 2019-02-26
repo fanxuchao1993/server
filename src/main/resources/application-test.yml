@@ -1,0 +1,51 @@
+config:
+  name: kfptService
+  mode: pro
+  version: 1.0.0
+  upload-path: /soft/uplaod/
+spring:
+  jackson:
+    time-zone: GMT+8
+  datasource:
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    url: jdbc:oracle:thin:@10.100.102.113:1521/orcl
+    username: kfpt
+    password: bhgx2004
+    type: com.alibaba.druid.pool.DruidDataSource
+    initialSize: 5  
+    minIdle: 5  
+    maxActive: 20  
+    maxWait: 60000  
+    timeBetweenEvictionRunsMillis: 60000  
+    minEvictableIdleTimeMillis: 300000  
+    validationQuery: select 1  
+    testWhileIdle: true  
+    testOnBorrow: false  
+    testOnReturn: false  
+    poolPreparedStatements: true  
+    maxPoolPreparedStatementPerConnectionSize: 20  
+    filters: stat,wall,log4j  
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: true
+  resources:
+    static-locations:
+    - classpath:/resources/
+    - classpath:/static/
+    - classpath:/logs/
+    - file:${config.upload-path}
+  mvc:
+    static-path-pattern: /**
+server:
+  port: 6003
+  tomcat: 
+    uri-encoding: utf-8
+mybatis:
+  config-location: classpath:/MyBatis-conf.xml
+  type-aliases-package: com.xjgx.domain
+  mapper-locations:
+  - classpath:/com/xjgx/**/mapper/oracle/*.xml
+    

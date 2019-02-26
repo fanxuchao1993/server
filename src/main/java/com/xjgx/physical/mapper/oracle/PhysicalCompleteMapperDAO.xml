@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalCompleteMapperDAO">
+	
+	<select id="queryList" resultMap="completeDtoMapper">
+		<![CDATA[
+			SELECT X.ORG_ID,
+		       X.ORG_NAME,
+		       X.CHILDREN_MONTH YJCM, --0-36个月儿童(应体检人数)
+		       Y.CHILDREN_MONTH SJCM, --0-36个月儿童(实际体检人数)
+		       ROUND(Y.CHILDREN_MONTH / X.CHILDREN_MONTH * 100, 2) || '%' CMP, --体检完成率
+		       X.CHILDREN_YEAR YJCY, --3-6岁儿童
+		       Y.CHILDREN_YEAR SJCY, --3-6岁儿童
+		       ROUND(Y.CHILDREN_YEAR / X.CHILDREN_YEAR * 100, 2) || '%' CYP, --体检完成率
+		       X.STUDENT YJXS, --在校学生
+		       Y.STUDENT SJXS, --在校学生
+		       ROUND(Y.STUDENT / X.STUDENT * 100, 2) || '%' XSP, --体检完成率
+		       X.RESIDENT_MIDDLE YJMJM, --16-64岁居民
+		       Y.RESIDENT_MIDDLE SJMJM, --16-64岁居民
+		       ROUND(Y.RESIDENT_MIDDLE / X.RESIDENT_MIDDLE * 100, 2) || '%' MJMP, --体检完成率
+		       X.RESIDENT_HIGH YJHJM, --65-79居民
+		       Y.RESIDENT_HIGH SJHJM, --65-79居民
+		       ROUND(Y.RESIDENT_HIGH / X.RESIDENT_HIGH * 100, 2) || '%' HJMP, --体检完成率
+		       X.OLD_MAN YJOLD, --80岁以上老人
+		       Y.OLD_MAN SJOLD, --80岁以上老人
+		       ROUND(Y.OLD_MAN / X.OLD_MAN * 100, 2) || '%' OLDP, --体检完成率
+		       X.MATERNAL YJYCF, --孕产妇
+		       Y.MATERNAL SJYCF, --孕产妇
+		       ROUND(Y.MATERNAL / X.MATERNAL * 100, 2) || '%' YCFP, --体检完成率
+		       X.RETIRE_WORKER YJTX, --退休职工
+		       Y.RETIRE_WORKER SJTX, --退休职工
+		       ROUND(Y.RETIRE_WORKER / X.RETIRE_WORKER * 100, 2) || '%' TXP, --体检完成率
+		       X.ENTERPRISE_WORKER YJQY, --企业职工
+		       Y.ENTERPRISE_WORKER SJQY, --企业职工
+		       ROUND(Y.ENTERPRISE_WORKER / X.ENTERPRISE_WORKER * 100, 2) || '%' QYP, --体检完成率
+		       X.HOBO YJLD, --流动人口
+		       Y.HOBO SJLD, --流动人口
+		       ROUND(Y.HOBO / X.HOBO * 100, 2) || '%' LDP --体检完成率
+			  FROM (SELECT X.ORG_ID,
+			               X.ORG_NAME,
+			               X.DISTRICTS,
+			               X.P_ORG_ID,
+			               SUM(X.MATERNAL) MATERNAL,
+			               SUM(X.CHILDREN_MONTH) CHILDREN_MONTH,
+			               SUM(X.CHILDREN_YEAR) CHILDREN_YEAR,
+			               SUM(X.ENTERPRISE_WORKER) ENTERPRISE_WORKER,
+			               SUM(X.HOBO) HOBO,
+			               SUM(X.OLD_MAN) OLD_MAN,
+			               SUM(X.POSITIVE_NUMS) POSITIVE_NUMS,
+			               SUM(X.RESIDENT_HIGH) RESIDENT_HIGH,
+			               SUM(X.RESIDENT_MIDDLE) RESIDENT_MIDDLE,
+			               SUM(X.RETIRE_WORKER) RETIRE_WORKER,
+			               SUM(X.STUDENT) STUDENT
+			          FROM PH_PHYSICAL_COMPLETE X
+			         WHERE X.COMPLETE_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND X.COMPLETE_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			           AND X.P_ORG_ID = #{orgId}
+			         GROUP BY X.ORG_ID, X.ORG_NAME, X.DISTRICTS, X.P_ORG_ID) Y,
+			       PH_PHYSICAL_NUMS X
+			 WHERE Y.ORG_ID = X.ORG_ID
+			   AND X.CYEAR = #{cyear}
+		   ]]>
+	</select>
+	<resultMap type="com.xjgx.physical.dto.PhysicalSummaryDTO" id="completeDtoMapper">
+		<id column="org_id" property="orgId"/>
+		<id column="org_name" property="orgName"/>
+		<id column="YJCM" property="yjcm"/>
+		<id column="SJCM" property="sjcm"/>
+		<id column="CMP" property="cmp"/>
+		<id column="YJCY" property="yjcy"/>
+		<id column="SJCY" property="sjcy"/>
+		<id column="CYP" property="cyp"/>
+		<id column="YJXS" property="yjxs"/>
+		<id column="SJXS" property="sjxs"/>
+		<id column="XSP" property="xsp"/>
+		<id column="YJMJM" property="yjmjm"/>
+		<id column="SJMJM" property="sjmjm"/>
+		<id column="MJMP" property="mjmp"/>
+		<id column="YJHJM" property="yjhjm"/>
+		<id column="SJHJM" property="sjhjm"/>
+		<id column="HJMP" property="hjmp"/>
+		<id column="YJOLD" property="yjold"/>
+		<id column="SJOLD" property="sjold"/>
+		<id column="OLDP" property="oldp"/>
+		<id column="YJYCF" property="yjycf"/>
+		<id column="SJYCF" property="sjycf"/>
+		<id column="YCFP" property="ycfp"/>
+		<id column="YJTX" property="yjtx"/>
+		<id column="SJTX" property="sjtx"/>
+		<id column="TXP" property="txp"/>
+		<id column="YJQY" property="yjqy"/>
+		<id column="SJQY" property="sjqy"/>
+		<id column="QYP" property="qyp"/>
+		<id column="YJLD" property="yjld"/>
+		<id column="SJLD" property="sjld"/>
+		<id column="LDP" property="ldp"/>
+	</resultMap>
+</mapper>

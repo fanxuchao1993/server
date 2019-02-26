@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalDiseaseAgeMapperDAO">
+
+	<select id="queryDiseaseAgeList" resultMap="diseaseAgeMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE, T.DISEASE_NAME, SUM(${column}) SUM
+			          FROM PH_PHYSICAL_DISEASE_AGE T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	
+	 <select id="queryDiseaseAgeTables" parameterType="hashmap" resultMap="diseaseAgeMapper">
+		<![CDATA[
+			SELECT T.DISEASE_CODE,
+			       T.DISEASE_NAME,
+			       SUM(T.AGED1) AGED1,
+			       SUM(T.AGED2) AGED2,
+			       SUM(T.CHILDREN1) CHILDREN1,
+			       SUM(T.CHILDREN2) CHILDREN2,
+			       SUM(T.YOUTH1) YOUTH1,
+			       SUM(T.YOUTH2) YOUTH2,
+			       SUM(T.YOUTH3) YOUTH3,
+			       SUM(T.YOUTH4) YOUTH4,
+			       (SUM(T.AGED1) + SUM(T.AGED2) + SUM(T.CHILDREN1) +
+			       SUM(T.CHILDREN2) + SUM(T.YOUTH1) + SUM(T.YOUTH2) +
+			       SUM(T.YOUTH3) + SUM(T.YOUTH4)) SUM
+			  FROM PH_PHYSICAL_DISEASE_AGE T
+			  WHERE T.P_ORG_ID = #{orgId}
+		            AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+		            AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			 ORDER BY SUM DESC
+		]]>	 
+	</select> 
+	
+	<resultMap type="com.xjgx.domain.PhysicalDiseaseAge" id="diseaseAgeMapper">
+		<id column="ORG_ID" property="orgId"/>
+		<id column="ORG_NAME" property="orgName"/>
+		<id column="DISEASE_CODE" property="diseaseCode"/>
+		<id column="DISEASE_NAME" property="diseaseName"/>
+		<id column="CHILDREN1" property="children1"/>
+		<id column="CHILDREN2" property="children2"/>
+		<id column="YOUTH1" property="youth1"/>
+		<id column="YOUTH2" property="youth2"/>
+		<id column="YOUTH3" property="youth3"/>
+		<id column="YOUTH4" property="youth4"/>
+		<id column="AGE1" property="age1"/>
+		<id column="AGE2" property="age2"/>
+		<id column="SUM" property="sum"/>
+	</resultMap>
+</mapper>

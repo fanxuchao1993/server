@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalAbnormalSituationMapperDAO">
+
+	<select id="queryAbnormalList" resultMap="situationMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.ITEM_CODE, T.ITEM_NAME, SUM(${column}) SUM
+			          FROM PH_PHYSICAL_ABNORMAL_SITUATION T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	<select id="queryAbnormalTables" parameterType="hashmap" resultMap="situationMapper">
+		<![CDATA[
+			SELECT T.ITEM_CODE,
+			       T.ITEM_NAME,
+			       SUM(T.MATERNAL) MATERNAL,
+			       SUM(T.CHILDREN_MONTH) CHILDREN_MONTH,
+			       SUM(T.CHILDREN_YEAR) CHILDREN_YEAR,
+			       SUM(T.ENTERPRISE_WORKER) ENTERPRISE_WORKER,
+			       SUM(T.HOBO) HOBO,
+			       SUM(T.OLD_MAN) OLD_MAN,
+			       SUM(T.RESIDENT_HIGH) RESIDENT_HIGH,
+			       SUM(T.RESIDENT_MIDDLE) RESIDENT_MIDDLE,
+			       SUM(T.RETIRE_WORKER) RETIRE_WORKER,
+			       SUM(T.STUDENT) STUDENT,
+			       (SUM(T.MATERNAL) + SUM(T.CHILDREN_MONTH) + SUM(T.CHILDREN_YEAR) +
+			       SUM(T.ENTERPRISE_WORKER) + SUM(T.HOBO) + SUM(T.OLD_MAN) +
+			       SUM(T.RESIDENT_HIGH) + SUM(T.RESIDENT_MIDDLE) +
+			       SUM(T.RETIRE_WORKER) + SUM(T.STUDENT)) HJ
+			  FROM PH_PHYSICAL_ABNORMAL_SITUATION T
+			  WHERE T.P_ORG_ID = #{orgId}
+		            AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+		            AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			 ORDER BY HJ
+		]]>	 
+	</select>
+	<select id="queryAbnormalByOrg" resultMap="situationMapper">
+		<![CDATA[
+			SELECT T.ORG_ID,
+			       T.ORG_NAME,
+			       T.ITEM_CODE,
+			       T.ITEM_NAME,
+			       SUM(T.MATERNAL + T.CHILDREN_MONTH + T.CHILDREN_YEAR +
+			           T.ENTERPRISE_WORKER + T.HOBO + T.OLD_MAN + T.RESIDENT_HIGH +
+			           T.RESIDENT_MIDDLE + T.RETIRE_WORKER + T.STUDENT) SUM
+			  FROM PH_PHYSICAL_ABNORMAL_SITUATION T
+			 WHERE T.ITEM_CODE IN
+			       (SELECT ITEM_CODE
+			          FROM (SELECT T.*, ROWNUM
+			                  FROM (SELECT ITEM_CODE,
+			                               ITEM_NAME,
+			                               SUM(T.MATERNAL + T.CHILDREN_MONTH +
+			                                   T.CHILDREN_YEAR + T.ENTERPRISE_WORKER +
+			                                   T.HOBO + T.OLD_MAN + T.RESIDENT_HIGH +
+			                                   T.RESIDENT_MIDDLE + T.RETIRE_WORKER +
+			                                   T.STUDENT) SUM
+			                          FROM PH_PHYSICAL_ABNORMAL_SITUATION T
+			                         WHERE T.P_ORG_ID = #{orgId}
+			                           AND T.TEST_DATE >=
+			                               TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			                           AND T.TEST_DATE <=
+			                               TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			                         GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			                         ORDER BY SUM DESC) T
+			                 WHERE ROWNUM <= 5))
+			 GROUP BY T.ORG_ID, T.ORG_NAME, T.ITEM_CODE, T.ITEM_NAME
+			 ORDER BY T.ITEM_CODE
+		]]>
+	</select>	
+	<select id="queryAbnormalByOrgTables" resultMap="situationMapper">
+		<![CDATA[
+			SELECT T.ORG_ID,
+			       T.ORG_NAME,
+			       T.ITEM_CODE,
+			       T.ITEM_NAME,
+			       SUM(T.MATERNAL + T.CHILDREN_MONTH + T.CHILDREN_YEAR +
+			           T.ENTERPRISE_WORKER + T.HOBO + T.OLD_MAN + T.RESIDENT_HIGH +
+			           T.RESIDENT_MIDDLE + T.RETIRE_WORKER + T.STUDENT) SUM
+			  FROM PH_PHYSICAL_ABNORMAL_SITUATION T
+			 WHERE T.P_ORG_ID = #{orgId}
+			   AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			   AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.ORG_ID, T.ORG_NAME, T.ITEM_CODE, T.ITEM_NAME
+			 ORDER BY SUM DESC
+		]]>
+	</select>
+	<resultMap type="com.xjgx.domain.PhysicalAbnormalSituation" id="situationMapper">
+		<id column="ORG_ID" property="orgId"/>
+		<id column="ORG_NAME" property="orgName"/>
+		<id column="ITEM_CODE" property="itemCode"/>
+		<id column="ITEM_NAME" property="itemName"/>
+		<id column="MATERNAL" property="Maternal"/>
+		<id column="CHILDREN_MONTH" property="childrenMonth"/>
+		<id column="CHILDREN_YEAR" property="childrenYear"/>
+		<id column="ENTERPRISE_WORKER" property="enterpriseWorker"/>
+		<id column="HOBO" property="hobo"/>
+		<id column="OLD_MAN" property="oldMan"/>
+		<id column="RESIDENT_HIGH" property="residentHigh"/>
+		<id column="RESIDENT_MIDDLE" property="residentMiddle"/>
+		<id column="RETIRE_WORKER" property="retireWorker"/>
+		<id column="STUDENT" property="student"/>
+		<id column="HJ" property="sum"/>
+	</resultMap>
+</mapper>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalAbnormalMapperDAO">
+
+	<select id="queryListTop10" resultMap="abnormalMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.ITEM_CODE, T.ITEM_NAME, SUM(T.DITEM_NUM) SUM
+			          FROM PH_PHYSICAL_ABNORMAL T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	<select id="queryItemList" resultMap="abnormalMapper">
+		<![CDATA[
+			SELECT T.ORG_ID, T.ORG_NAME, SUM(T.DITEM_NUM) SUM
+			  FROM PH_PHYSICAL_ABNORMAL T
+			 WHERE T.ITEM_CODE = #{itemCode}
+			   AND T.P_ORG_ID = #{orgId}
+			   AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			   AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.ORG_ID, T.ORG_NAME
+		 ]]>
+	</select>
+	<select id="querySexList" resultMap="abnormalMapper">
+		<![CDATA[
+			SELECT X.*, ROWNUM
+			  FROM (SELECT T.ITEM_CODE, T.ITEM_NAME, SUM(${column}) SUM
+			          FROM PH_PHYSICAL_ABNORMAL T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			         ORDER BY SUM DESC) X
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	<select id="querySexTables" resultMap="abnormalMapper">
+		<![CDATA[
+			SELECT T.ITEM_CODE,
+		       T.ITEM_NAME,
+		       SUM(T.MAN_NUM) MN,
+		       SUM(T.WOMAN_NUM) WN,
+		       (SUM(T.MAN_NUM) + SUM(T.WOMAN_NUM)) SUM
+			  FROM PH_PHYSICAL_ABNORMAL T
+			 WHERE T.P_ORG_ID = #{orgId}
+			   AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			   AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.ITEM_CODE, T.ITEM_NAME
+			 ORDER BY SUM DESC
+		 ]]>
+	</select>
+	<resultMap type="com.xjgx.physical.dto.AbnormalZbDTO" id="abnormalMapper">
+		<id column="org_id" property="orgId"/>
+		<id column="org_name" property="orgName"/>
+		<id column="MN" property="manNum"/>
+		<id column="WN" property="womanNum"/>
+		<id column="item_code" property="itemCode"/>
+		<id column="item_name" property="itemName"/>
+		<id column="disease_code" property="diseaseCode"/>
+		<id column="disease_name" property="diseaseName"/>
+		<id column="sum" property="sum"/>
+	</resultMap>
+</mapper>

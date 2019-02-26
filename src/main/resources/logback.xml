@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- http://blog.csdn.net/haidage/article/details/6794509 -->
+<configuration debug="false" scan="true" scanPeriod="60 seconds">
+
+	<include resource="org/springframework/boot/logging/logback/base.xml" />
+	
+	<property name="logPath" value="./logs/info.log" />
+	<!-- 输出的控制台 -->
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{80} %line - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+	<!-- 输出到文件 -->
+	<appender name="infoAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${logPath}</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>${logPath}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+			<!-- 单个文件最大100M -->			
+			<maxFileSize>100MB</maxFileSize>
+			<!-- 保留30天的日志 -->
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{80} %line - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+    
+    <root level="info">
+        <appender-ref ref="consoleAppender"/>
+        <appender-ref ref="infoAppender"/>
+    </root>
+
+
+	<!-- mybatis日志打印 -->
+	<logger name="com.xjgx.oc.daoMapper" level="debug">
+    </logger>
+</configuration>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalProgressMapperDAO">
+
+	<select id="queryList" resultMap="progressMapper">
+		SELECT T.ORG_ID,
+		       T.ORG_NAME,
+		       T.DISTRICTS,
+		       T.REG_NUMS,
+		       T.SORT_NUMS,
+		       T.WAIT_NUMS,
+		       T.FINISH_NUMS,
+		       T.PRINT_NUMS,
+		       (T.REG_NUMS + T.SORT_NUMS + T.WAIT_NUMS + T.FINISH_NUMS +
+		       T.PRINT_NUMS) SUM,
+		       ROUND((T.FINISH_NUMS + T.PRINT_NUMS) /
+		             (DECODE(T.REG_NUMS + T.SORT_NUMS + T.WAIT_NUMS +
+		                     T.FINISH_NUMS + T.PRINT_NUMS, 0, 1,
+		              (T.REG_NUMS + T.SORT_NUMS + T.WAIT_NUMS + T.FINISH_NUMS +
+		              T.PRINT_NUMS))) * 100,
+		             2) || '%' PERCENT
+		  FROM PH_PHYSICAL_PROGRESS T
+		<where>
+			<if test="orgId !=null and orgId !=''">
+				and T.P_ORG_ID = #{orgId} 
+			</if>
+			<if test="physicalDate !=null and physicalDate !=''">
+				and T.PHYSICAL_DATE = TO_DATE(#{physicalDate}, 'YYYY-MM-DD') 
+			</if>
+		</where>
+	</select>
+	<select id="queryListByMonthSum" resultMap="progressMapper">
+		<![CDATA[
+			SELECT T.ORG_ID,
+			       T.ORG_NAME,
+			       NVL("1", 0) "M1",
+			       NVL("2", 0) "M2",
+			       NVL("3", 0) "M3",
+			       NVL("4", 0) "M4",
+			       NVL("5", 0) "M5",
+			       NVL("6", 0) "M6",
+			       NVL("7", 0) "M7",
+			       NVL("8", 0) "M8",
+			       NVL("9", 0) "M9",
+			       NVL("10", 0) "M10",
+			       NVL("11", 0) "M11",
+			       NVL("12", 0) "M12",
+			       (NVL("1", 0) + NVL("2", 0) + NVL("3", 0) + NVL("4", 0) +
+               		NVL("5", 0) + NVL("6", 0) + NVL("7", 0) + NVL("8", 0) +
+               		NVL("9", 0) + NVL("10", 0) + NVL("11", 0) + NVL("12", 0)) SUM
+			  FROM (SELECT *
+			          FROM (SELECT T.ORG_ID,
+			                       T.ORG_NAME,
+			                       EXTRACT(MONTH FROM T.PHYSICAL_DATE) M,
+			                       SUM(T.FINISH_NUMS) SUM
+			                  FROM PH_PHYSICAL_PROGRESS T
+			                 WHERE EXTRACT(YEAR FROM T.PHYSICAL_DATE) = #{year}
+			                   AND T.P_ORG_ID = #{orgId}	
+			                 GROUP BY T.ORG_ID,
+			                          T.ORG_NAME,
+			                          EXTRACT(MONTH FROM T.PHYSICAL_DATE))
+			        PIVOT(SUM(SUM)
+			           FOR M IN(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))) T
+		]]>
+	</select>
+	<resultMap type="com.xjgx.domain.PhysicalProgress" id="progressMapper">
+		<id column="id" property="id"/>
+		<id column="org_id" property="orgId"/>
+		<id column="p_org_id" property="pOrgId"/>
+		<id column="org_name" property="orgName"/>
+		<id column="districts" property="districts"/>
+		<id column="reg_nums" property="regNums"/>
+		<id column="sort_nums" property="sortNums"/>
+		<id column="wait_nums" property="waitNums"/>
+		<id column="finish_nums" property="finishNums"/>
+		<id column="print_nums" property="printNums"/>
+		<id column="physical_nums" property="physicalNums"/>
+		<id column="physical_date" property="physicalDate"/>
+		<id column="sum" property="sum"/>
+		<id column="percent" property="percent"/>
+	</resultMap>
+</mapper>

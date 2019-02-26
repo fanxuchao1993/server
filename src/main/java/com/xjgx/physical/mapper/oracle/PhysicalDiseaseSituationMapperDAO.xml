@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalDiseaseSituationMapperDAO">
+
+	<select id="queryDiseaseSituationByGrpList" resultMap="diseaseSituationMapper">
+		<![CDATA[
+			SELECT T.*, ROWNUM
+			  FROM (SELECT T.DISEASE_CODE, T.DISEASE_NAME, SUM(${column}) SUM
+			          FROM  PH_PHYSICAL_DISEASE_SITUATION  T
+			         WHERE T.P_ORG_ID = #{orgId}
+			           AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+			           AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			         GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+			         ORDER BY SUM DESC) T
+			 WHERE ROWNUM <= 10
+		 ]]>
+	</select>
+	<select id="queryDiseaseSituationByGrpTables" parameterType="hashmap" resultMap="diseaseSituationMapper">
+	<![CDATA[
+			SELECT T.DISEASE_CODE,
+			       T.DISEASE_NAME,
+			       SUM(T.MATERNAL) MATERNAL,
+			       SUM(T.CHILDREN_MONTH) CHILDREN_MONTH,
+			       SUM(T.CHILDREN_YEAR) CHILDREN_YEAR,
+			       SUM(T.ENTERPRISE_WORKER) ENTERPRISE_WORKER,
+			       SUM(T.HOBO) HOBO,
+			       SUM(T.OLD_MAN) OLD_MAN,
+			       SUM(T.RESIDENT_HIGH) RESIDENT_HIGH,
+			       SUM(T.RESIDENT_MIDDLE) RESIDENT_MIDDLE,
+			       SUM(T.RETIRE_WORKER) RETIRE_WORKER,
+			       SUM(T.STUDENT) STUDENT,
+			       (SUM(T.MATERNAL) + SUM(T.CHILDREN_MONTH) + SUM(T.CHILDREN_YEAR) +
+			       SUM(T.ENTERPRISE_WORKER) + SUM(T.HOBO) + SUM(T.OLD_MAN) +
+			       SUM(T.RESIDENT_HIGH) + SUM(T.RESIDENT_MIDDLE) +
+			       SUM(T.RETIRE_WORKER) + SUM(T.STUDENT)) HJ
+			  FROM PH_PHYSICAL_DISEASE_SITUATION T
+			  WHERE T.P_ORG_ID = #{orgId}
+		            AND T.TEST_DATE >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+		            AND T.TEST_DATE <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+			 GROUP BY T.DISEASE_CODE, T.DISEASE_NAME
+		]]>	 
+	</select>
+	<resultMap type="com.xjgx.domain.PhysicalDiseaseSituation" id="diseaseSituationMapper">
+	    <id column="ORG_ID" property="org_Id"/>
+		<id column="ORG_NAME" property="orgName"/>
+		<id column="DISEASE_CODE" property="diseaseCode"/>
+		<id column="DISEASE_NAME" property="diseaseName"/>
+		<id column="MATERNAL" property="Maternal"/>
+		<id column="CHILDREN_MONTH" property="childrenMonth"/>
+		<id column="CHILDREN_YEAR" property="childrenYear"/>
+		<id column="ENTERPRISE_WORKER" property="enterpriseWorker"/>
+		<id column="HOBO" property="hobo"/>
+		<id column="OLD_MAN" property="oldMan"/>
+		<id column="RESIDENT_HIGH" property="residentHigh"/>
+		<id column="RESIDENT_MIDDLE" property="residentMiddle"/>
+		<id column="RETIRE_WORKER" property="retireWorker"/>
+		<id column="STUDENT" property="student"/>
+		<id column="IS_DISPLAY" property="isDisplay"/>
+		<id column="HJ" property="sum"/>
+	</resultMap>
+</mapper>

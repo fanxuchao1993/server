@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xjgx.physical.dao.PhysicalCountMapperDAO">
+
+	<select id="queryCountOne" parameterType="com.xjgx.physical.dto.PhysicalCountDTO" resultType="com.xjgx.physical.dto.PhysicalCountDTO">
+		 SELECT D.physicalCompanyNumber physicalCompanyNumber,
+		        D.checkNumber checkNumber,
+		        D.realCheckNumber realCheckNumber,
+		        D.positiveNumber  positiveNumber, 
+		        CASE WHEN D.realCheckNumber != 0 THEN RTRIM(TO_CHAR(ROUND(D.positiveNumber / D.realCheckNumber * 100, 2), 'fm990.99'), '.') || '%' ELSE ''  END positiveRate
+                 FROM (SELECT (SELECT COUNT(DISTINCT(A.ORG_ID))
+                  FROM PH_PHYSICAL_COMPLETE A
+                  WHERE A.P_ORG_ID = #{pOrgId} 
+                  AND  
+                    TO_CHAR(A.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+                    TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+                    TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')) physicalCompanyNumber,
+               (SELECT SUM(MATERNAL) + SUM(CHILDREN_MONTH) +
+                       SUM(CHILDREN_YEAR) + SUM(ENTERPRISE_WORKER) +
+                       SUM(HOBO) + SUM(OLD_MAN) + SUM(RESIDENT_HIGH) +
+                       SUM(RESIDENT_MIDDLE) + SUM(RETIRE_WORKER) +
+                       SUM(STUDENT)
+                  FROM PH_PHYSICAL_NUMS E
+                  WHERE E.P_ORG_ID = #{pOrgId}
+                  AND   E.CYEAR = TO_CHAR(SYSDATE, 'YYYY')
+                  ) checkNumber,
+               (SELECT SUM(maternal) + SUM(children_month) +
+                       SUM(children_year) + SUM(ENTERPRISE_WORKER) +
+                       SUM(HOBO) + sum(OLD_MAN) + SUM(RESIDENT_HIGH) +
+                       SUM(RESIDENT_MIDDLE) + SUM(RETIRE_WORKER) +
+                       SUM(STUDENT)
+                  FROM PH_PHYSICAL_COMPLETE B
+                 WHERE  B.P_ORG_ID = #{pOrgId}
+                    AND  
+                    TO_CHAR(B.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+                    TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+                    TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')) realCheckNumber,
+               (SELECT SUM(C.POSITIVE_NUMS)
+                  FROM PH_PHYSICAL_COMPLETE C 
+                  WHERE  C.P_ORG_ID = #{pOrgId}
+			       AND
+			       TO_CHAR(C.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+                   TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+                   TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')
+                   ) positiveNumber
+          FROM DUAL) D
+	</select>
+	
+	<select id="queryCountTwo" parameterType="com.xjgx.physical.dto.PhysicalCountDTO" resultType="com.xjgx.physical.dto.PhysicalCountDTO">
+	 SELECT B.NAME orgName,
+       (SELECT SUM(C.MATERNAL) + SUM(C.CHILDREN_MONTH) +
+               SUM(C.CHILDREN_YEAR) + SUM(C.ENTERPRISE_WORKER) + SUM(C.HOBO) +
+               SUM(C.OLD_MAN) + SUM(C.RESIDENT_HIGH) +
+               SUM(C.RESIDENT_MIDDLE) + SUM(C.RETIRE_WORKER) +
+               SUM(C.STUDENT)
+          FROM PH_PHYSICAL_NUMS C
+         WHERE C.ORG_ID = B.ID
+               AND C.CYEAR = TO_CHAR(SYSDATE, 'YYYY')) checkNumber,
+       (SELECT SUM(D.MATERNAL) + SUM(D.CHILDREN_MONTH) +
+               SUM(D.CHILDREN_YEAR) + SUM(D.ENTERPRISE_WORKER) + SUM(D.HOBO) +
+               SUM(D.OLD_MAN) + SUM(D.RESIDENT_HIGH) +
+               SUM(D.RESIDENT_MIDDLE) + SUM(D.RETIRE_WORKER) +
+               SUM(D.STUDENT)
+          FROM PH_PHYSICAL_COMPLETE D
+         WHERE D.ORG_ID = B.ID AND
+          TO_CHAR(D.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+          TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+          TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')) realCheckNumber,
+       (SELECT SUM(E.POSITIVE_NUMS)
+          FROM PH_PHYSICAL_COMPLETE E
+         WHERE E.ORG_ID = B.ID AND
+           TO_CHAR(E.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+           TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+           TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')) positiveNumber
+     FROM (SELECT DISTINCT A.ORG_ID ID, A.ORG_NAME NAME
+           FROM PH_PHYSICAL_NUMS A
+           WHERE A.P_ORG_ID = #{pOrgId}
+           AND  A.CYEAR = TO_CHAR(SYSDATE, 'YYYY')) B
+	</select>
+	
+	<select id="queryCountThree" parameterType="com.xjgx.physical.dto.PhysicalCountDTO" resultType="com.xjgx.physical.dto.PhysicalCountDTO">
+	 SELECT B.YEAR year,B.MONTH month,
+          (SUM(B.MATERNAL) + SUM(B.CHILDREN_MONTH) + SUM(B.CHILDREN_YEAR) +
+           SUM(B.ENTERPRISE_WORKER) + SUM(B.HOBO) + SUM(B.OLD_MAN) +
+           SUM(B.RESIDENT_HIGH) + SUM(B.RESIDENT_MIDDLE) +
+           SUM(B.RETIRE_WORKER) + SUM(B.STUDENT)) realCheckNumber
+     FROM (SELECT A.*, TO_CHAR(A.COMPLETE_DATE, 'MM') MONTH,TO_CHAR(A.COMPLETE_DATE, 'YYYY') YEAR
+           FROM PH_PHYSICAL_COMPLETE A
+           WHERE TO_CHAR(A.COMPLETE_DATE, 'YYYY-MM-DD HH:MM:SS') BETWEEN
+               TO_CHAR(SYSDATE, 'YYYY') || '-01-01 00:00:00' AND
+               TO_CHAR(SYSDATE, 'YYYY-MM-DD HH:MM:SS')
+		   AND  A.P_ORG_ID = #{pOrgId}) B
+     GROUP BY B.YEAR ,B.MONTH
+     ORDER BY B.MONTH
+	</select>
+</mapper>
