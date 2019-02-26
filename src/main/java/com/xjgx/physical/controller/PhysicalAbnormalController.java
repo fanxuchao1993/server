@@ -54,6 +54,7 @@ public class PhysicalAbnormalController {
 		datas.put("indexTop10", physicalAbnormalService.queryListTop10(orgId, startDate, endDate)) ;
 		datas.put("diseaseTop10", physicalDiseaseService.queryListTop10(orgId, startDate, endDate)) ;
 		result.setResult(datas) ;
+		System.out.println("我是范旭超");
 		return result ;
 	}
 	
